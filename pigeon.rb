@@ -121,11 +121,17 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
       %ul.articles
         - articles.each do |ar|
           %li
-            %time{ :datetime => ar[:date] }
-              = ar[:date].strftime("%-d %b %y")
+            - if ar[:date]
+              %time{ :datetime => ar[:date] }
+                = ar[:date].strftime("%-d %b %y")
+            - else
+              %time.unknown
             &mdash;
-            %a.article{ :href => ar[:filename]}
-              = ar[:title]
+            - if ar[:title]
+              %a.article{ :href => ar[:filename] }
+                = ar[:title]
+            - else
+              %a.article.empty{ :href => ar[:filename] }
   END
 f = File.open("#{destination}/index.html", "w")
 f.write(index.render(Object.new, :articles => articles))
