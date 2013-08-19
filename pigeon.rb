@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'tempfile'
 require 'set'
 require 'rubygems'
@@ -19,18 +20,17 @@ class Pigeon
     })
     return self
   end
-  def execute(objects)
+  def execute start
     # TODO: do this in topological order
     # TODO: erase attributes once they're no longer needed
     # TODO: finalizers for attributes
-    objects.each do |obj|
-      @actions.each do |action|
-        action[:block].call obj
-      end
+    @actions.each do |action|
+      action[:block].call start
     end
+    return start
   end
   # List all of the attributes that are not provided within.
-  def free()
+  def free
     set = Set.new []
     @actions.each { |a| set.merge(a[:requires]) }
     set.subtract (@actions.map { |a| a[:provide] })
@@ -51,26 +51,37 @@ end
 
 # Parse HTML with nokogiri
 main.register([:html], :document) do |article|
-  article[:document] = Nokogiri::HTML(article[:html])
+  article[:document] = Nokogiri::HTML(article[:html], nil, "utf-8")
   article[:html].rewind
 end
 
 # Stick the title in.
 main.register([:document], :title) do |article|
-  article[:title] = article[:document].css('h1')[0].text
+  h1s = article[:document].css('h1')
+  if h1s.length > 0
+    article[:title] = h1s[0].text
+  else
+    article[:title] = nil
+  end
 end
 
 # Stick the date in.
 main.register([:document], :date) do |article|
-  date = article[:document].css('time[pubdate]')[0]["datetime"]
-  article[:date] = Chronic.parse date
+  times = article[:document].css('time[pubdate]')
+  if times.length > 0
+    article[:date] = Chronic.parse times[0]["datetime"]
+  else
+    article[:date] = nil
+  end
 end
 
+# Render each thing with a template.
 main.register([:title, :date, :html], :output) do |article|
   template = Haml::Engine.new <<-END.gsub(/^ {4}/, '')
     !!! 5
     %html
       %head
+        %meta{ :charset => "utf-8" }
         %title
           = title
       %body
@@ -78,4 +89,10 @@ main.register([:title, :date, :html], :output) do |article|
           = html.read
     END
   article[:output] = template.render(Object.new, article)
+end
+
+# Deduce the filename for each article.
+main.register([:title, :date], :filename) do |article|
+  pretty = article[:date].strftime("%Y-%m-%d")
+  article[:filename] = "#{pretty}-#{article[:title]}.html" 
 end
