@@ -17,6 +17,7 @@ class Pigeon
       :provide => provide,
       :block => block
     })
+    return self
   end
   def execute(objects)
     # TODO: do this in topological order
