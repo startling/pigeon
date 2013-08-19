@@ -1,4 +1,5 @@
 require 'tempfile'
+require 'set'
 require 'rubygems'
 require 'nokogiri'
 require 'kramdown'
@@ -25,6 +26,13 @@ class Pigeon
         action[:block].call obj
       end
     end
+  end
+  # List all of the attributes that are not provided within.
+  def free()
+    set = Set.new []
+    @actions.each { |a| set.merge(a[:requires]) }
+    set.subtract (@actions.map { |a| a[:provide] })
+    return set.to_a
   end
 end
 
