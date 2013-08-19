@@ -128,23 +128,34 @@ filename = {
   end
 }
 
-# Blah
-main = Pigeon.new [
-  markdown, parseHtml,
-  getTitle, getDate,
-  template, filename
-]
+# Create an action writing :output to :filename.
+def writeOut parent
+  return {
+    :requires => [:output, :filename],
+    :provide  => nil,
+    :block    => lambda do |output, filename|
+      f = File.open(File.join(parent, filename), "w")
+      f.write output
+      f.close
+    end
+  }
+end
 
+
+# Blah
 source, destination = ARGV
 source ||= "."
 destination ||= source
+
+main = Pigeon.new [
+  markdown, parseHtml,
+  getTitle, getDate,
+  template, filename,
+  writeOut(destination)
+]
+
 articles = Dir.glob("#{source}/*.markdown")
   .map { |a| main.execute(:source => a) }
-articles.each do |article|
-  f = File.open("#{destination}/#{article[:filename]}", "w")
-  f.write article[:output]
-  f.close
-end
 
 index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
   !!! 5
