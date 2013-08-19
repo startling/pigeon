@@ -66,16 +66,15 @@ main.register([:document], :date) do |article|
 end
 
 main.register([:title, :date, :html], :output) do |article|
-  template = Haml::Engine.new <<END
-!!! 5
-%html
-  %head
-    %title
-      = title
-  %body
-    %article
-      = html.read
-END
-  r = template.render(Object.new, article)
-  article[:output] = r
+  template = Haml::Engine.new <<-END.gsub(/^ {4}/, '')
+    !!! 5
+    %html
+      %head
+        %title
+          = title
+      %body
+        %article
+          = html.read
+    END
+  article[:output] = template.render(Object.new, article)
 end
