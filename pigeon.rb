@@ -24,7 +24,11 @@ class Pigeon
     # TODO: erase attributes once they're no longer needed
     # TODO: finalizers for attributes
     self.tsort.each do |action|
-      action[:block].call start
+      arguments = action[:requires].map { |r| start[r] }
+      provided  = action[:block].call *arguments
+      if action[:provide]
+        start[action[:provide]] = provided
+      end
     end
     return start
   end
@@ -45,12 +49,12 @@ end
 markdown = {
   :requires => [:source],
   :provide  => :html,
-  :block    => lambda do |article|
-    md = Kramdown::Document.new(File.read(article[:source]))
-    file = Tempfile.new article[:source]
+  :block    => lambda do |source|
+    md = Kramdown::Document.new(File.read(source))
+    file = Tempfile.new source
     file.write md.to_html
     file.rewind
-    article[:html] = file
+    return file
   end
 }
 
@@ -58,9 +62,10 @@ markdown = {
 parseHtml = {
   :requires => [:html],
   :provide  => :document,
-  :block    => lambda do |article|
-    article[:document] = Nokogiri::HTML(article[:html], nil, "utf-8")
-    article[:html].rewind
+  :block    => lambda do |html|
+    document = Nokogiri::HTML(html, nil, "utf-8")
+    html.rewind
+    return document
   end
 }
 
@@ -68,12 +73,12 @@ parseHtml = {
 getTitle = {
   :requires => [:document],
   :provide  => :title,
-  :block    => lambda do |article|
-    h1s = article[:document].css('h1')
+  :block    => lambda do |document|
+    h1s = document.css('h1')
     if h1s.length > 0
-      article[:title] = h1s[0].text
+      return h1s[0].text
     else
-      article[:title] = nil
+      return nil
     end
   end
 }
@@ -82,12 +87,12 @@ getTitle = {
 getDate = {
   :requires => [:document],
   :provide  => :date,
-  :block    => lambda do |article|
-    times = article[:document].css('time[pubdate]')
+  :block    => lambda do |document|
+    times = document.css('time[pubdate]')
     if times.length > 0
-      article[:date] = Chronic.parse times[0]["datetime"]
+      return Chronic.parse times[0]["datetime"]
     else
-      article[:date] = nil
+      return nil
     end
   end
 }
@@ -96,7 +101,7 @@ getDate = {
 template = {
   :requires => [:title, :date, :html],
   :provide  => :output,
-  :block    => lambda do |article|
+  :block    => lambda do |title, date, html|
     page = Haml::Engine.new <<-END.gsub(/^ {6}/, '')
       !!! 5
       %html
@@ -108,7 +113,8 @@ template = {
           %article
             = html.read
       END
-    article[:output] = page.render(Object.new, article)
+    object = { :title => title, :date => date, :html => html }
+    return page.render(Object.new, object)
   end
 }
 
@@ -116,9 +122,9 @@ template = {
 filename = {
   :requires => [:title, :date],
   :provide  => :filename,
-  :block    => lambda do |article|
-    pretty = article[:date].strftime("%Y-%m-%d")
-    article[:filename] = "#{pretty}-#{article[:title]}.html" 
+  :block    => lambda do |title, date|
+    pretty = date.strftime("%Y-%m-%d")
+    return "#{pretty}-#{title}.html" 
   end
 }
 
