@@ -1,5 +1,6 @@
 # encoding: utf-8
 require 'tempfile'
+require 'tsort'
 require 'set'
 require 'rubygems'
 require 'nokogiri'
@@ -12,11 +13,17 @@ class Pigeon
   def initialize(actions)
     @actions = actions
   end
+  def dependencies(action, &block)
+    @actions.each do |other|
+      if action[:requires].include? other[:provide]
+        block.call other
+      end
+    end
+  end
   def execute start
-    # TODO: do this in topological order
     # TODO: erase attributes once they're no longer needed
     # TODO: finalizers for attributes
-    @actions.each do |action|
+    self.tsort.each do |action|
       action[:block].call start
     end
     return start
@@ -28,6 +35,11 @@ class Pigeon
     set.subtract (@actions.map { |a| a[:provide] })
     return set.to_a
   end
+  include TSort
+  def tsort_each_node(&block)
+    @actions.each(&block)
+  end
+  alias tsort_each_child dependencies
 end
 
 markdown = {
