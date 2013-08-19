@@ -96,3 +96,38 @@ main.register([:title, :date], :filename) do |article|
   pretty = article[:date].strftime("%Y-%m-%d")
   article[:filename] = "#{pretty}-#{article[:title]}.html" 
 end
+
+# Blah
+source, destination = ARGV
+source ||= "."
+destination ||= source
+articles = Dir.glob("#{source}/*.markdown")
+  .map { |a| main.execute(:source => a) }
+articles.each do |article|
+  f = File.open("#{destination}/#{article[:filename]}", "w")
+  f.write article[:output]
+  f.close
+end
+
+index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
+  !!! 5
+  %html
+    %head
+      %meta{ :charset => "utf-8" }
+      %title
+        startlelog
+    %body
+      %h1 Blog Posts
+      %ul.articles
+        - articles.each do |ar|
+          %li
+            %time{ :datetime => ar[:date] }
+              = ar[:date].strftime("%-d %b %y")
+            &mdash;
+            %a.article{ :href => ar[:filename]}
+              = ar[:title]
+  END
+f = File.open("#{destination}/index.html", "w")
+f.write(index.render(Object.new, :articles => articles))
+f.close
+
