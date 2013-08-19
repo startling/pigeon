@@ -4,6 +4,7 @@ require 'rubygems'
 require 'nokogiri'
 require 'kramdown'
 require 'chronic'
+require 'haml'
 
 class Pigeon
   attr :actions
@@ -62,4 +63,19 @@ end
 main.register([:document], :date) do |article|
   date = article[:document].css('time[pubdate]')[0]["datetime"]
   article[:date] = Chronic.parse date
+end
+
+main.register([:title, :date, :html], :output) do |article|
+  template = Haml::Engine.new <<END
+!!! 5
+%html
+  %head
+    %title
+      = title
+  %body
+    %article
+      = html.read
+END
+  r = template.render(Object.new, article)
+  article[:output] = r
 end
