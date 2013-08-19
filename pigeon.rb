@@ -188,7 +188,7 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
           %li
             - if ar[:date]
               %time{ :datetime => ar[:date] }
-                = ar[:date].strftime("%-d %b %y")
+                = ar[:date].strftime("%d %b %Y")
             - else
               %time.unknown
             &mdash;
