@@ -7,6 +7,7 @@ require 'nokogiri'
 require 'kramdown'
 require 'chronic'
 require 'haml'
+require 'trollop'
 
 class Pigeon
   attr :actions
@@ -141,20 +142,31 @@ def writeOut parent
   }
 end
 
-
 # Blah
-source, destination = ARGV
-source ||= "."
-destination ||= source
+options = Trollop::options do
+  opt :title, "blog title",
+    :type => :string, :default => "blog"
+  opt :stylesheet, "css URI",
+    :type => :string
+  opt :with, "include another file",
+    :type => :string, :multi => true
+  opt :input, "input directory",
+    :type => :string, :default => "."
+  opt :output, "output directory",
+    :type => :string, :required => true
+end
+if options.stylesheet
+  options.with.push options.stylesheet
+end
 
 main = Pigeon.new [
   markdown, parseHtml,
   getTitle, getDate,
   template, filename,
-  writeOut(destination)
+  writeOut(options[:output])
 ]
 
-articles = Dir.glob("#{source}/*.markdown")
+articles = Dir.glob(File.join options[:input], "*.markdown")
   .map { |a| main.execute(:source => a) }
 
 index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
@@ -162,8 +174,13 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
   %html
     %head
       %meta{ :charset => "utf-8" }
+      - if options.stylesheet
+        %link{ :rel   => "stylesheet",
+               :type  => "text/css",
+               :media => "screen",
+               :href  => options.stylesheet }
       %title
-        startlelog
+        = options.title
     %body
       %h1 Blog Posts
       %ul.articles
@@ -181,7 +198,7 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
             - else
               %a.article.empty{ :href => ar[:filename] }
   END
-f = File.open("#{destination}/index.html", "w")
-f.write(index.render(Object.new, :articles => articles))
+f = File.open(File.join(options[:output], "index.html"), "w")
+f.write(index.render Object.new, :articles => articles, :options => options)
 f.close
 
