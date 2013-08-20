@@ -14,7 +14,7 @@ class Pigeon
   def initialize(actions)
     @actions = actions
   end
-  def dependencies(action, &block)
+  def dependencies action, &block
     @actions.each do |other|
       if action[:requires].include? other[:provide]
         block.call other
@@ -37,12 +37,12 @@ class Pigeon
   def free
     set = Set.new []
     @actions.each { |a| set.merge(a[:requires]) }
-    set.subtract (@actions.map { |a| a[:provide] })
+    set.subtract @actions.map { |a| a[:provide] }
     return set.to_a
   end
   include TSort
-  def tsort_each_node(&block)
-    @actions.each(&block)
+  def tsort_each_node &block
+    @actions.each &block
   end
   alias tsort_each_child dependencies
 end
@@ -51,7 +51,7 @@ markdown = {
   :requires => [:source],
   :provide  => :html,
   :block    => lambda do |source|
-    md = Kramdown::Document.new(File.read(source))
+    md = Kramdown::Document.new File.read source
     file = Tempfile.new source
     file.write md.to_html
     file.rewind
@@ -64,7 +64,7 @@ parseHtml = {
   :requires => [:html],
   :provide  => :document,
   :block    => lambda do |html|
-    document = Nokogiri::HTML(html, nil, "utf-8")
+    document = Nokogiri::HTML html, nil, "utf-8"
     html.rewind
     return document
   end
@@ -89,7 +89,7 @@ getDate = {
   :requires => [:document],
   :provide  => :date,
   :block    => lambda do |document|
-    times = document.css('time[pubdate]')
+    times = document.css 'time[pubdate]'
     if times.length > 0
       return Chronic.parse times[0]["datetime"]
     else
@@ -132,7 +132,7 @@ filename = {
   :requires => [:title, :date],
   :provide  => :filename,
   :block    => lambda do |title, date|
-    pretty = date.strftime("%Y-%m-%d")
+    pretty = date.strftime "%Y-%m-%d"
     return "#{pretty}-#{title}.html" 
   end
 }
@@ -142,7 +142,7 @@ writeOut = {
   :requires => [:output, :filename, :options],
   :provide  => nil,
   :block    => lambda do |output, filename, options|
-    f = File.open(File.join(options[:output], filename), "w")
+    f = File.open File.join(options[:output], filename), "w"
     f.write output
     f.close
   end
@@ -202,6 +202,9 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
                 %a.article.empty{ :href => ar[:filename] }
   END
 f = File.open(File.join(options[:output], "index.html"), "w")
-f.write(index.render Object.new, :articles => articles, :options => options)
+i = index.render Object.new,
+  :articles => articles,
+  :options  => options
+f.write i
 f.close
 
