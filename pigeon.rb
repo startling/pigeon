@@ -161,9 +161,6 @@ options = Trollop::options do
   opt :output, "output directory",
     :type => :string, :required => true
 end
-if options.stylesheet
-  options.with.push options.stylesheet
-end
 
 main = Pigeon.new [
   markdown, parseHtml,
