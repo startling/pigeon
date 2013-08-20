@@ -132,17 +132,15 @@ filename = {
 }
 
 # Create an action writing :output to :filename.
-def writeOut parent
-  return {
-    :requires => [:output, :filename],
-    :provide  => nil,
-    :block    => lambda do |output, filename|
-      f = File.open(File.join(parent, filename), "w")
-      f.write output
-      f.close
-    end
-  }
-end
+writeOut = {
+  :requires => [:output, :filename, :options],
+  :provide  => nil,
+  :block    => lambda do |output, filename, options|
+    f = File.open(File.join(options[:output], filename), "w")
+    f.write output
+    f.close
+  end
+}
 
 # Blah
 options = Trollop::options do
@@ -165,11 +163,11 @@ main = Pigeon.new [
   markdown, parseHtml,
   getTitle, getDate,
   template, filename,
-  writeOut(options[:output])
+  writeOut
 ]
 
 articles = Dir.glob(File.join options[:input], "*.markdown")
-  .map { |a| main.execute(:source => a) }
+  .map { |a| main.execute :source => a, :options => options }
 
 index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
   !!! 5
