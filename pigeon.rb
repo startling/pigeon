@@ -117,7 +117,7 @@ template = {
             = options.title
         %body
           %article
-            = html.read
+            ~ html.read
       END
     return page.render Object.new,
       :title   => title,
