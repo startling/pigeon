@@ -51,7 +51,9 @@ markdown = {
   :requires => [:source],
   :provide  => :html,
   :block    => lambda do |source|
-    md = Kramdown::Document.new File.read source
+    md = Kramdown::Document.new (File.read source),
+      :coderay_line_numbers => nil,
+      :coderay_css => :class
     file = Tempfile.new source
     file.write md.to_html
     file.rewind
