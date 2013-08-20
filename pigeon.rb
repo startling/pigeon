@@ -194,7 +194,6 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
                   = ar[:date].strftime("%d %b %Y")
               - else
                 %time.unknown
-              &mdash;
               - if ar[:title]
                 %a.article{ :href => ar[:filename] }
                   = ar[:title]
