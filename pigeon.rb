@@ -114,8 +114,10 @@ template = {
           %article
             = html.read
       END
-    object = { :title => title, :date => date, :html => html }
-    return page.render(Object.new, object)
+    return page.render Object.new,
+      :title => title,
+      :date  => date,
+      :html  => html
   end
 }
 
