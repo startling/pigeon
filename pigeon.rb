@@ -100,24 +100,30 @@ getDate = {
 
 # Render each thing with a template.
 template = {
-  :requires => [:title, :date, :html],
+  :requires => [:title, :date, :html, :options],
   :provide  => :output,
-  :block    => lambda do |title, date, html|
+  :block    => lambda do |title, date, html, options|
     page = Haml::Engine.new <<-END.gsub(/^ {6}/, '')
       !!! 5
       %html
         %head
           %meta{ :charset => "utf-8" }
+          - if options.stylesheet
+            %link{ :rel   => "stylesheet",
+                   :type  => "text/css",
+                   :media => "screen",
+                   :href  => options.stylesheet }
           %title
-            = title
+            = options.title
         %body
           %article
             = html.read
       END
     return page.render Object.new,
-      :title => title,
-      :date  => date,
-      :html  => html
+      :title   => title,
+      :date    => date,
+      :html    => html,
+      :options => options
   end
 }
 
