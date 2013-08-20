@@ -184,21 +184,22 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
       %title
         = options.title
     %body
-      %h1 Blog Posts
-      %ul.articles
-        - articles.each do |ar|
-          %li
-            - if ar[:date]
-              %time{ :datetime => ar[:date] }
-                = ar[:date].strftime("%d %b %Y")
-            - else
-              %time.unknown
-            &mdash;
-            - if ar[:title]
-              %a.article{ :href => ar[:filename] }
-                = ar[:title]
-            - else
-              %a.article.empty{ :href => ar[:filename] }
+      %article
+        %h1 Blog Posts
+        %ul.articles
+          - articles.each do |ar|
+            %li
+              - if ar[:date]
+                %time{ :datetime => ar[:date] }
+                  = ar[:date].strftime("%d %b %Y")
+              - else
+                %time.unknown
+              &mdash;
+              - if ar[:title]
+                %a.article{ :href => ar[:filename] }
+                  = ar[:title]
+              - else
+                %a.article.empty{ :href => ar[:filename] }
   END
 f = File.open(File.join(options[:output], "index.html"), "w")
 f.write(index.render Object.new, :articles => articles, :options => options)
