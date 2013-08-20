@@ -203,7 +203,7 @@ index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
   END
 f = File.open(File.join(options[:output], "index.html"), "w")
 i = index.render Object.new,
-  :articles => articles,
+  :articles => articles.sort { |x, y| y[:date] <=> x[:date] },
   :options  => options
 f.write i
 f.close
