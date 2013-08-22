@@ -147,9 +147,8 @@ module Pigeon::Action
     :requires => [:output, :filename, :options],
     :provide  => nil,
     :block    => lambda do |output, filename, options|
-      f = File.open File.join(options[:output], filename), "w"
-      f.write output
-      f.close
+      target = File.join options[:output], filename
+      open(target, "w") { |f| f.write output }
     end
   }
 end
