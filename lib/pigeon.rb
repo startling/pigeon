@@ -1,5 +1,4 @@
 # encoding: utf-8
-require 'tempfile'
 require 'tsort'
 require 'set'
 require 'rubygems'
@@ -9,10 +8,11 @@ require 'chronic'
 require 'haml'
 
 class Pigeon
-  attr :actions
   def initialize(actions)
     @actions = actions
   end
+
+  # Fold over the actions which an action will require.
   def dependencies action, &block
     @actions.each do |other|
       if action[:requires].include? other[:provide]
@@ -20,6 +20,9 @@ class Pigeon
       end
     end
   end
+
+  # Given a hash of initial attributes, run each action in
+  # dependency-wise topological order.
   def execute start
     # TODO: erase attributes once they're no longer needed
     # TODO: finalizers for attributes
@@ -32,6 +35,7 @@ class Pigeon
     end
     return start
   end
+
   # List all of the attributes that are not provided within.
   def free
     set = Set.new []
@@ -39,6 +43,7 @@ class Pigeon
     set.subtract @actions.map { |a| a[:provide] }
     return set.to_a
   end
+
   include TSort
   def tsort_each_node &block
     @actions.each &block
@@ -47,6 +52,8 @@ class Pigeon
 end
 
 module Pigeon::Action
+  # Transform the markdown source (under ':source') into
+  # some HTML.
   Markdown = {
     :requires => [:source],
     :provide  => :html,
@@ -54,25 +61,20 @@ module Pigeon::Action
       md = Kramdown::Document.new (File.read source),
         :coderay_line_numbers => nil,
         :coderay_css => :class
-      file = Tempfile.new source
-      file.write md.to_html
-      file.rewind
-      return file
+      return md.to_html
     end
   }
 
-  # Parse HTML with nokogiri
+  # Parse HTML (under ':html') with nokogiri into ':document'.
   ParseHtml = {
     :requires => [:html],
     :provide  => :document,
     :block    => lambda do |html|
-      document = Nokogiri::HTML html, nil, "utf-8"
-      html.rewind
-      return document
+      return Nokogiri::HTML html
     end
   }
 
-  # Stick the title in.
+  # Create a title.
   GetTitle = {
     :requires => [:document],
     :provide  => :title,
@@ -86,7 +88,7 @@ module Pigeon::Action
     end
   }
   
-  # Stick the date in.
+  # Parse a date.
   GetDate = {
     :requires => [:document],
     :provide  => :date,
@@ -100,7 +102,7 @@ module Pigeon::Action
     end
   }
   
-  # Render each thing with a template.
+  # Render with a baked-in template.
   Template = {
     :requires => [:title, :date, :html, :options],
     :provide  => :output,
@@ -119,7 +121,7 @@ module Pigeon::Action
               = options.title
           %body
             %article
-              ~ html.read
+              ~ html
         END
       return page.render Object.new,
         :title   => title,
@@ -129,7 +131,7 @@ module Pigeon::Action
     end
   }
   
-  # Deduce the filename for each article.
+  # Deduce a filename.
   Filename = {
     :requires => [:title, :date],
     :provide  => :filename,
@@ -140,7 +142,7 @@ module Pigeon::Action
     end
   }
   
-  # Create an action writing :output to :filename.
+  # Write ':output' to ':filename'.
   WriteOut = {
     :requires => [:output, :filename, :options],
     :provide  => nil,
