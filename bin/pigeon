@@ -1,0 +1,70 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+require 'rubygems'
+require 'trollop'
+require 'haml'
+require 'pigeon'
+
+# Blah
+options = Trollop::options do
+  opt :title, "blog title",
+    :type => :string, :default => "blog"
+  opt :stylesheet, "css URI",
+    :type => :string
+  opt :with, "include another file",
+    :type => :string, :multi => true
+  opt :input, "input directory",
+    :type => :string, :default => "."
+  opt :output, "output directory",
+    :type => :string, :required => true
+end
+
+main = Pigeon.new [
+  Pigeon::Action.markdown,
+  Pigeon::Action.parseHtml,
+  Pigeon::Action.getTitle,
+  Pigeon::Action.getDate,
+  Pigeon::Action.template,
+  Pigeon::Action.filename,
+  Pigeon::Action.writeOut
+]
+
+articles = Dir.glob(File.join options[:input], "*.markdown")
+  .map { |a| main.execute :source => a, :options => options }
+
+index = Haml::Engine.new <<-END.gsub(/^ {2}/, '')
+  !!! 5
+  %html
+    %head
+      %meta{ :charset => "utf-8" }
+      - if options.stylesheet
+        %link{ :rel   => "stylesheet",
+               :type  => "text/css",
+               :media => "screen",
+               :href  => options.stylesheet }
+      %title
+        = options.title
+    %body
+      %article
+        %h1 Blog Posts
+        %ul.articles
+          - articles.each do |ar|
+            %li
+              - if ar[:date]
+                %time{ :datetime => ar[:date] }
+                  = ar[:date].strftime("%d %b %Y")
+              - else
+                %time.unknown
+              - if ar[:title]
+                %a.article{ :href => ar[:filename] }
+                  = ar[:title]
+              - else
+                %a.article.empty{ :href => ar[:filename] }
+  END
+f = File.open(File.join(options[:output], "index.html"), "w")
+i = index.render Object.new,
+  :articles => articles.sort { |x, y| y[:date] <=> x[:date] },
+  :options  => options
+f.write i
+f.close
+
