@@ -135,7 +135,8 @@ module Pigeon::Action
     :provide  => :filename,
     :block    => lambda do |title, date|
       pretty = date.strftime "%Y-%m-%d"
-      return "#{pretty}-#{title}.html" 
+      # TODO: make this URI-safe
+      "#{pretty}-#{title}.html".tr " ", "-"
     end
   }
   
