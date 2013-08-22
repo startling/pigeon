@@ -20,13 +20,13 @@ options = Trollop::options do
 end
 
 main = Pigeon.new [
-  Pigeon::Action.markdown,
-  Pigeon::Action.parseHtml,
-  Pigeon::Action.getTitle,
-  Pigeon::Action.getDate,
-  Pigeon::Action.template,
-  Pigeon::Action.filename,
-  Pigeon::Action.writeOut
+  Pigeon::Action::Markdown,
+  Pigeon::Action::ParseHtml,
+  Pigeon::Action::GetTitle,
+  Pigeon::Action::GetDate,
+  Pigeon::Action::Template,
+  Pigeon::Action::Filename,
+  Pigeon::Action::WriteOut
 ]
 
 articles = Dir.glob(File.join options[:input], "*.markdown")

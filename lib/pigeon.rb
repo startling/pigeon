@@ -47,120 +47,106 @@ class Pigeon
 end
 
 module Pigeon::Action
-  def self.markdown
-    {
-      :requires => [:source],
-      :provide  => :html,
-      :block    => lambda do |source|
-        md = Kramdown::Document.new (File.read source),
-          :coderay_line_numbers => nil,
-          :coderay_css => :class
-        file = Tempfile.new source
-        file.write md.to_html
-        file.rewind
-        return file
-      end
-    }
-  end
+  Markdown = {
+    :requires => [:source],
+    :provide  => :html,
+    :block    => lambda do |source|
+      md = Kramdown::Document.new (File.read source),
+        :coderay_line_numbers => nil,
+        :coderay_css => :class
+      file = Tempfile.new source
+      file.write md.to_html
+      file.rewind
+      return file
+    end
+  }
 
   # Parse HTML with nokogiri
-  def self.parseHtml
-    {
-      :requires => [:html],
-      :provide  => :document,
-      :block    => lambda do |html|
-        document = Nokogiri::HTML html, nil, "utf-8"
-        html.rewind
-        return document
-      end
-    }
-  end
+  ParseHtml = {
+    :requires => [:html],
+    :provide  => :document,
+    :block    => lambda do |html|
+      document = Nokogiri::HTML html, nil, "utf-8"
+      html.rewind
+      return document
+    end
+  }
 
   # Stick the title in.
-  def self.getTitle
-    {
-      :requires => [:document],
-      :provide  => :title,
-      :block    => lambda do |document|
-        h1s = document.css('h1')
-        if h1s.length > 0
-          return h1s[0].text
-        else
-          return nil
-        end
+  GetTitle = {
+    :requires => [:document],
+    :provide  => :title,
+    :block    => lambda do |document|
+      h1s = document.css('h1')
+      if h1s.length > 0
+        return h1s[0].text
+      else
+        return nil
       end
-    }
-  end
+    end
+  }
   
   # Stick the date in.
-  def self.getDate
-    {
-      :requires => [:document],
-      :provide  => :date,
-      :block    => lambda do |document|
-        times = document.css 'time[pubdate]'
-        if times.length > 0
-          return Chronic.parse times[0]["datetime"]
-        else
-          return nil
-        end
+  GetDate = {
+    :requires => [:document],
+    :provide  => :date,
+    :block    => lambda do |document|
+      times = document.css 'time[pubdate]'
+      if times.length > 0
+        return Chronic.parse times[0]["datetime"]
+      else
+        return nil
       end
-    }
-  end
+    end
+  }
   
   # Render each thing with a template.
-  def self.template
-    {
-      :requires => [:title, :date, :html, :options],
-      :provide  => :output,
-      :block    => lambda do |title, date, html, options|
-        page = Haml::Engine.new <<-END.gsub(/^ {10}/, '')
-          !!! 5
-          %html
-            %head
-              %meta{ :charset => "utf-8" }
-              - if options.stylesheet
-                %link{ :rel   => "stylesheet",
-                       :type  => "text/css",
-                       :media => "screen",
-                       :href  => options.stylesheet }
-              %title
-                = options.title
-            %body
-              %article
-                ~ html.read
-          END
-        return page.render Object.new,
-          :title   => title,
-          :date    => date,
-          :html    => html,
-          :options => options
-      end
-    }
-  end
+  Template = {
+    :requires => [:title, :date, :html, :options],
+    :provide  => :output,
+    :block    => lambda do |title, date, html, options|
+      page = Haml::Engine.new <<-END.gsub(/^ {8}/, '')
+        !!! 5
+        %html
+          %head
+            %meta{ :charset => "utf-8" }
+            - if options.stylesheet
+              %link{ :rel   => "stylesheet",
+                     :type  => "text/css",
+                     :media => "screen",
+                     :href  => options.stylesheet }
+            %title
+              = options.title
+          %body
+            %article
+              ~ html.read
+        END
+      return page.render Object.new,
+        :title   => title,
+        :date    => date,
+        :html    => html,
+        :options => options
+    end
+  }
   
   # Deduce the filename for each article.
-  def self.filename
-    {
-      :requires => [:title, :date],
-      :provide  => :filename,
-      :block    => lambda do |title, date|
-        pretty = date.strftime "%Y-%m-%d"
-        return "#{pretty}-#{title}.html" 
-      end
-    }
-  end
+  Filename = {
+    :requires => [:title, :date],
+    :provide  => :filename,
+    :block    => lambda do |title, date|
+      pretty = date.strftime "%Y-%m-%d"
+      return "#{pretty}-#{title}.html" 
+    end
+  }
   
   # Create an action writing :output to :filename.
-  def self.writeOut
-    {
-      :requires => [:output, :filename, :options],
-      :provide  => nil,
-      :block    => lambda do |output, filename, options|
-        f = File.open File.join(options[:output], filename), "w"
-        f.write output
-        f.close
-      end
-    }
-  end
+  WriteOut = {
+    :requires => [:output, :filename, :options],
+    :provide  => nil,
+    :block    => lambda do |output, filename, options|
+      f = File.open File.join(options[:output], filename), "w"
+      f.write output
+      f.close
+    end
+  }
 end
