@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version     =  "0.0.0"
   s.files       =  ["lib/pigeon.rb"]
   s.executables << 'pigeon'
-  s.summary     =  "opinionionated unconfigurable blog engine"
+  s.summary     =  "opinionated unconfigurable blog engine"
   s.authors     =  ["startling"]
   s.add_dependency "haml", ">= 4.0.3"
   s.add_dependency "nokogiri", ">= 1.6.0"
