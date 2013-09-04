@@ -7,6 +7,18 @@ require 'kramdown'
 require 'chronic'
 require 'haml'
 
+# This library introduces a notion of `actions' that produce values
+# labeled with symbols and that may depend on other actions. For now,
+# these are represented as hashes with at least three keys: `:requires',
+# `:provide', and `:block'. The last of these must be any thing that may
+# be called with a number of parameters corresponding to the list in
+# `:requires'.
+#
+# A 'Pigeon' object, then, is just a collection of these actions. They
+# may be topologically sorted and executed in order.
+#
+# Further niceties such as symbol capture, composition of 'Pigeon's,
+# and pruning of unnecessary metadata are forthcoming.
 class Pigeon
   def initialize(actions)
     @actions = actions
@@ -37,7 +49,7 @@ class Pigeon
   end
 
   # List all of the attributes that are not provided within.
-  def free
+  def fr
     set = Set.new []
     @actions.each { |a| set.merge(a[:requires]) }
     set.subtract @actions.map { |a| a[:provide] }
@@ -53,7 +65,7 @@ end
 
 module Pigeon::Action
   # Transform the markdown source (under ':source') into
-  # some HTML.
+  # soqme HTML.
   Markdown = {
     :requires => [:source],
     :provide  => :html,
