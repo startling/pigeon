@@ -145,12 +145,11 @@ module Pigeon::Action
   
   # Deduce a filename.
   Filename = {
-    :requires => [:title, :date],
+    :requires => [:title],
     :provide  => :filename,
-    :block    => lambda do |title, date|
-      pretty = date.strftime "%Y-%m-%d"
+    :block    => lambda do |title|
       # TODO: make this URI-safe
-      "#{pretty}-#{title}.html".tr " ", "-"
+      "#{title}.html".tr " ", "-"
     end
   }
   
